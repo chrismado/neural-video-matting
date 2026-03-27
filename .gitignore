@@ -6,7 +6,7 @@ build/
 *.egg
 
 # Data
-data/
+/data/
 *.mp4
 *.avi
 *.mov
