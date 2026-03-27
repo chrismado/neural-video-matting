@@ -31,7 +31,7 @@ jobs:
           pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
           pip install numpy Pillow pyyaml tqdm fastapi uvicorn python-multipart httpx pytest
       - name: Run tests (CPU, tiny model, T=2)
-        run: python -m pytest tests/ -v --tb=short
+        run: PYTHONPATH=. python -m pytest tests/ -v --tb=short
 
   docker:
     runs-on: ubuntu-latest
