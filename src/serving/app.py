@@ -16,7 +16,26 @@ from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.responses import Response, StreamingResponse
 
 from src.serving.composite import composite_video
-from src.serving.inference import MattingInference, load_video_frames
+from src.serving.inference import (
+    MattingInference,
+    VideoFormatError,
+    load_video_frames,
+)
+
+# Supported video MIME types for upload validation
+SUPPORTED_VIDEO_MIMETYPES = {
+    "video/mp4",
+    "video/x-msvideo",
+    "video/quicktime",
+    "video/x-matroska",
+    "video/webm",
+    "video/x-flv",
+    "video/x-ms-wmv",
+    "application/octet-stream",  # fallback for unknown types
+}
+
+# Maximum upload size in bytes (500 MB)
+MAX_UPLOAD_SIZE = 500 * 1024 * 1024
 
 logger = logging.getLogger(__name__)
 
@@ -77,6 +96,29 @@ def metrics():
     }
 
 
+def _validate_video_upload(upload: UploadFile) -> None:
+    """Validate an uploaded video file by checking its filename extension.
+
+    Args:
+        upload: The uploaded file to validate.
+
+    Raises:
+        HTTPException: If the file has an unsupported extension.
+    """
+    if upload.filename:
+        ext = Path(upload.filename).suffix.lower()
+        from src.serving.inference import SUPPORTED_VIDEO_EXTENSIONS
+
+        if ext and ext not in SUPPORTED_VIDEO_EXTENSIONS:
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    f"Unsupported video format '{ext}'. "
+                    f"Supported: {sorted(SUPPORTED_VIDEO_EXTENSIONS)}"
+                ),
+            )
+
+
 @app.post("/matte_video")
 async def matte_video(
     video: UploadFile = File(...),
@@ -97,6 +139,9 @@ async def matte_video(
     if _engine is None:
         raise HTTPException(status_code=503, detail="Model not loaded.")
 
+    # Validate video format before processing
+    _validate_video_upload(video)
+
     with tempfile.TemporaryDirectory() as tmpdir:
         # Save uploaded files
         video_path = os.path.join(tmpdir, "input_video" + Path(video.filename).suffix)
@@ -107,10 +152,15 @@ async def matte_video(
         with open(mask_path, "wb") as f:
             f.write(await mask.read())
 
-        # Load frames
-        frames = load_video_frames(video_path)
+        # Load frames (with format validation disabled since we already saved to disk)
+        try:
+            frames = load_video_frames(video_path, validate=False)
+        except VideoFormatError as e:
+            raise HTTPException(status_code=400, detail=str(e))
         if len(frames) == 0:
             raise HTTPException(status_code=400, detail="Could not read video frames.")
+
+        logger.info(f"Loaded {len(frames)} frames from uploaded video")
 
         # Load mask(s)
         mask_img = cv2.imread(mask_path, cv2.IMREAD_GRAYSCALE)
