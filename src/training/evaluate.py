@@ -115,6 +115,47 @@ def compute_connectivity(
     return float(np.mean(errors))
 
 
+def compute_temporal_stability(pred: torch.Tensor) -> float:
+    """Temporal stability metric (dtSSD) — measures flicker between consecutive frames.
+
+    Computes the mean absolute difference of spatial gradients between consecutive
+    frames. Lower values indicate more temporally stable mattes. This is a key
+    metric for evaluating video matting quality vs per-frame approaches.
+
+    Args:
+        pred: (B, T, 1, H, W) predicted alpha sequence. T must be >= 2.
+
+    Returns:
+        Mean dtSSD value. Returns 0.0 if T < 2.
+    """
+    if pred.ndim != 5:
+        return 0.0
+    B, T, C, H, W = pred.shape
+    if T < 2:
+        return 0.0
+
+    total = 0.0
+    for t in range(1, T):
+        prev_grad = _sobel_gradient(pred[:, t - 1])
+        curr_grad = _sobel_gradient(pred[:, t])
+        total += (curr_grad - prev_grad).abs().mean().item()
+
+    return total / (T - 1)
+
+
+def compute_mad(pred: torch.Tensor, gt: torch.Tensor) -> float:
+    """Mean Absolute Difference — normalized version of SAD.
+
+    Args:
+        pred: (B, 1, H, W) or (B, T, 1, H, W) predicted alpha in [0, 1].
+        gt:   same shape, ground-truth alpha.
+
+    Returns:
+        Mean absolute difference per pixel.
+    """
+    return (pred - gt).abs().mean().item()
+
+
 def evaluate_all(pred: torch.Tensor, gt: torch.Tensor) -> Dict[str, float]:
     """Compute all evaluation metrics.
 
@@ -125,12 +166,95 @@ def evaluate_all(pred: torch.Tensor, gt: torch.Tensor) -> Dict[str, float]:
     Returns:
         Dict with metric names and values.
     """
-    return {
+    metrics = {
         "SAD": compute_sad(pred, gt),
         "MSE": compute_mse(pred, gt),
+        "MAD": compute_mad(pred, gt),
         "gradient_error": compute_gradient_error(pred, gt),
         "connectivity": compute_connectivity(pred, gt),
     }
+
+    # Add temporal stability for video sequences
+    if pred.ndim == 5 and pred.shape[1] > 1:
+        metrics["dtSSD"] = compute_temporal_stability(pred)
+
+    return metrics
+
+
+# ---------------------------------------------------------------------------
+# Numpy-based metrics for inference evaluation
+# ---------------------------------------------------------------------------
+
+
+def compute_sad_np(pred: np.ndarray, gt: np.ndarray) -> float:
+    """SAD for numpy arrays. Both should be (H, W) float32 in [0, 1]."""
+    return float(np.abs(pred - gt).sum())
+
+
+def compute_mse_np(pred: np.ndarray, gt: np.ndarray) -> float:
+    """MSE for numpy arrays. Both should be (H, W) float32 in [0, 1]."""
+    return float(np.mean((pred - gt) ** 2))
+
+
+def compute_gradient_error_np(pred: np.ndarray, gt: np.ndarray) -> float:
+    """Gradient error for numpy arrays. Both should be (H, W) float32 in [0, 1]."""
+    pred_gx = cv2.Sobel(pred, cv2.CV_32F, 1, 0, ksize=3)
+    pred_gy = cv2.Sobel(pred, cv2.CV_32F, 0, 1, ksize=3)
+    gt_gx = cv2.Sobel(gt, cv2.CV_32F, 1, 0, ksize=3)
+    gt_gy = cv2.Sobel(gt, cv2.CV_32F, 0, 1, ksize=3)
+
+    pred_grad = np.sqrt(pred_gx**2 + pred_gy**2)
+    gt_grad = np.sqrt(gt_gx**2 + gt_gy**2)
+
+    return float(np.mean(np.abs(pred_grad - gt_grad)))
+
+
+def evaluate_sequence_np(
+    preds: list,
+    gts: list,
+) -> Dict[str, float]:
+    """Evaluate a sequence of predicted alpha mattes against ground truth.
+
+    Computes per-frame metrics and averages them, plus temporal stability.
+
+    Args:
+        preds: List of (H, W) float32 predicted alpha mattes in [0, 1].
+        gts:   List of (H, W) float32 ground-truth alpha mattes in [0, 1].
+
+    Returns:
+        Dict with averaged metric names and values.
+    """
+    if len(preds) != len(gts):
+        raise ValueError(
+            f"Prediction count ({len(preds)}) != ground truth count ({len(gts)})"
+        )
+
+    sads, mses, grads = [], [], []
+    for pred, gt in zip(preds, gts):
+        sads.append(compute_sad_np(pred, gt))
+        mses.append(compute_mse_np(pred, gt))
+        grads.append(compute_gradient_error_np(pred, gt))
+
+    metrics = {
+        "SAD": float(np.mean(sads)),
+        "MSE": float(np.mean(mses)),
+        "gradient_error": float(np.mean(grads)),
+    }
+
+    # Temporal stability (dtSSD) — only meaningful for sequences
+    if len(preds) >= 2:
+        dtssd_values = []
+        for i in range(1, len(preds)):
+            prev_gx = cv2.Sobel(preds[i - 1], cv2.CV_32F, 1, 0, ksize=3)
+            prev_gy = cv2.Sobel(preds[i - 1], cv2.CV_32F, 0, 1, ksize=3)
+            curr_gx = cv2.Sobel(preds[i], cv2.CV_32F, 1, 0, ksize=3)
+            curr_gy = cv2.Sobel(preds[i], cv2.CV_32F, 0, 1, ksize=3)
+            prev_grad = np.sqrt(prev_gx**2 + prev_gy**2)
+            curr_grad = np.sqrt(curr_gx**2 + curr_gy**2)
+            dtssd_values.append(float(np.mean(np.abs(curr_grad - prev_grad))))
+        metrics["dtSSD"] = float(np.mean(dtssd_values))
+
+    return metrics
 
 
 # ---------------------------------------------------------------------------
