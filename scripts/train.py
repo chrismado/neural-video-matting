@@ -13,7 +13,7 @@ from torch.utils.data import DataLoader
 # Add project root to path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from src.data.augmentation import VideoMattingAugmentation  # noqa: E402
+from src.data.augmentation import VideoMattingAugmentation  # noqa: I001, E402
 from src.data.dataset import VideoMatteDataset  # noqa: E402
 from src.model.matting_network import MattingNetwork  # noqa: E402
 from src.training.trainer import Trainer  # noqa: E402
