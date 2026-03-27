@@ -119,8 +119,10 @@ async def matte_video(
             mask_frames_raw = load_video_frames(mask_path)
             if len(mask_frames_raw) == 0:
                 raise HTTPException(status_code=400, detail="Could not read mask.")
-            masks = [cv2.cvtColor(m, cv2.COLOR_RGB2GRAY).astype(np.float32) / 255.0
-                     for m in mask_frames_raw]
+            masks = [
+                cv2.cvtColor(m, cv2.COLOR_RGB2GRAY).astype(np.float32) / 255.0
+                for m in mask_frames_raw
+            ]
             # Pad if shorter than video
             while len(masks) < len(frames):
                 masks.append(masks[-1])

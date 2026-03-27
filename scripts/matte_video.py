@@ -26,7 +26,9 @@ def main():
     parser = argparse.ArgumentParser(description="Run video matting on a single video")
     parser.add_argument("--video", type=str, required=True, help="Input video path.")
     parser.add_argument(
-        "--mask", type=str, required=True,
+        "--mask",
+        type=str,
+        required=True,
         help="Guidance mask: path to a single image or directory of mask frames.",
     )
     parser.add_argument("--checkpoint", type=str, required=True, help="Model checkpoint.")

@@ -65,7 +65,7 @@ class Encoder(nn.Module):
             nn.MaxPool2d(3, stride=2, padding=1),
         )
         # Stage 1-4: ResNet-34 block counts [3, 4, 6, 3]
-        self.stage1 = _make_stage(64, 64, 3)            # H/4, 64ch
+        self.stage1 = _make_stage(64, 64, 3)  # H/4, 64ch
         self.stage2 = _make_stage(64, 128, 4, stride=2)  # H/8, 128ch
         self.stage3 = _make_stage(128, 256, 6, stride=2)  # H/16, 256ch
         self.stage4 = _make_stage(256, 512, 3, stride=2)  # H/32, 512ch
@@ -78,9 +78,9 @@ class Encoder(nn.Module):
         Returns:
             [f1, f2, f3, f4] feature maps at H/4, H/8, H/16, H/32.
         """
-        x = self.stem(x)       # (B, 64, H/4, W/4)
-        f1 = self.stage1(x)    # (B, 64, H/4, W/4)
-        f2 = self.stage2(f1)   # (B, 128, H/8, W/8)
-        f3 = self.stage3(f2)   # (B, 256, H/16, W/16)
-        f4 = self.stage4(f3)   # (B, 512, H/32, W/32)
+        x = self.stem(x)  # (B, 64, H/4, W/4)
+        f1 = self.stage1(x)  # (B, 64, H/4, W/4)
+        f2 = self.stage2(f1)  # (B, 128, H/8, W/8)
+        f3 = self.stage3(f2)  # (B, 256, H/16, W/16)
+        f4 = self.stage4(f3)  # (B, 512, H/32, W/32)
         return [f1, f2, f3, f4]

@@ -40,9 +40,7 @@ class ConvGRU(nn.Module):
         # Candidate hidden state
         self.conv_h = nn.Conv2d(combined, hidden_channels, kernel_size, padding=padding)
 
-    def forward(
-        self, x: torch.Tensor, h_prev: torch.Tensor | None = None
-    ) -> torch.Tensor:
+    def forward(self, x: torch.Tensor, h_prev: torch.Tensor | None = None) -> torch.Tensor:
         """
         Args:
             x: (B, input_channels, H, W) current frame features.
@@ -58,8 +56,8 @@ class ConvGRU(nn.Module):
 
         combined = torch.cat([x, h_prev], dim=1)
 
-        z = torch.sigmoid(self.conv_z(combined))   # update gate
-        r = torch.sigmoid(self.conv_r(combined))   # reset gate
+        z = torch.sigmoid(self.conv_z(combined))  # update gate
+        r = torch.sigmoid(self.conv_r(combined))  # reset gate
 
         combined_r = torch.cat([x, r * h_prev], dim=1)
         h_candidate = torch.tanh(self.conv_h(combined_r))

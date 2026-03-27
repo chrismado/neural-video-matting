@@ -24,10 +24,12 @@ def main():
     parser.add_argument("--alpha-dir", type=str, required=True, help="Directory of alpha PNGs.")
     parser.add_argument("--bg", type=str, required=True, help="Background video or image path.")
     parser.add_argument("--output", type=str, default="output/composited", help="Output directory.")
-    parser.add_argument("--no-spill-suppression", action="store_true",
-                        help="Disable spill suppression.")
-    parser.add_argument("--spill-strength", type=float, default=0.5,
-                        help="Spill suppression strength.")
+    parser.add_argument(
+        "--no-spill-suppression", action="store_true", help="Disable spill suppression."
+    )
+    parser.add_argument(
+        "--spill-strength", type=float, default=0.5, help="Spill suppression strength."
+    )
     args = parser.parse_args()
 
     # Load foreground

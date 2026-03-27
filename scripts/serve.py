@@ -16,7 +16,9 @@ def main():
     parser.add_argument("--host", type=str, default="0.0.0.0", help="Bind host.")
     parser.add_argument("--port", type=int, default=8000, help="Bind port.")
     parser.add_argument(
-        "--config", type=str, default="configs/inference_config.yaml",
+        "--config",
+        type=str,
+        default="configs/inference_config.yaml",
         help="Inference config path.",
     )
     parser.add_argument("--reload", action="store_true", help="Enable auto-reload.")

@@ -18,10 +18,10 @@ def test_encoder_output_shapes():
     x = torch.randn(1, 4, 128, 128)
     features = enc(x)
     assert len(features) == 4
-    assert features[0].shape == (1, 64, 32, 32)    # H/4
-    assert features[1].shape == (1, 128, 16, 16)   # H/8
-    assert features[2].shape == (1, 256, 8, 8)      # H/16
-    assert features[3].shape == (1, 512, 4, 4)      # H/32
+    assert features[0].shape == (1, 64, 32, 32)  # H/4
+    assert features[1].shape == (1, 128, 16, 16)  # H/8
+    assert features[2].shape == (1, 256, 8, 8)  # H/16
+    assert features[3].shape == (1, 512, 4, 4)  # H/32
 
 
 def test_decoder_alpha_shape():
@@ -80,4 +80,5 @@ def test_full_network_single_frame():
 
 if __name__ == "__main__":
     import pytest
+
     pytest.main([__file__, "-v"])

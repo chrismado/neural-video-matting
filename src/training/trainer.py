@@ -96,6 +96,7 @@ class Trainer:
         if self.use_wandb:
             try:
                 import wandb
+
                 self.wandb_run = wandb.init(
                     project=config.get("wandb_project", "neural-video-matting"),
                     config=config,
@@ -130,6 +131,7 @@ class Trainer:
 
                 if self.use_wandb:
                     import wandb
+
                     metrics = {f"val/{k}": v for k, v in val_metrics.items()}
                     wandb.log(metrics, step=self.global_step)
 
@@ -139,6 +141,7 @@ class Trainer:
 
             if self.use_wandb:
                 import wandb
+
                 wandb.log(
                     {
                         "train/total_loss": train_metrics["total"],
@@ -163,8 +166,8 @@ class Trainer:
         count = 0
 
         for batch in self.train_loader:
-            composite = batch["composite"].to(self.device)   # (B, T, 3, H, W)
-            alpha_gt = batch["alpha_gt"].to(self.device)     # (B, T, 1, H, W)
+            composite = batch["composite"].to(self.device)  # (B, T, 3, H, W)
+            alpha_gt = batch["alpha_gt"].to(self.device)  # (B, T, 1, H, W)
             foreground = batch["foreground"].to(self.device)  # (B, T, 3, H, W)
 
             B, T, C, H, W = composite.shape

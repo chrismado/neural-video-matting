@@ -92,20 +92,10 @@ class MattingInference:
 
         # To tensor: (1, 3, H, W) and (1, 1, H, W)
         frame_t = (
-            torch.from_numpy(frame_resized)
-            .permute(2, 0, 1)
-            .unsqueeze(0)
-            .float()
-            .to(self.device)
+            torch.from_numpy(frame_resized).permute(2, 0, 1).unsqueeze(0).float().to(self.device)
             / 255.0
         )
-        mask_t = (
-            torch.from_numpy(mask_resized)
-            .unsqueeze(0)
-            .unsqueeze(0)
-            .float()
-            .to(self.device)
-        )
+        mask_t = torch.from_numpy(mask_resized).unsqueeze(0).unsqueeze(0).float().to(self.device)
         # Clamp mask to [0, 1]
         if mask_t.max() > 1.0:
             mask_t = mask_t / 255.0

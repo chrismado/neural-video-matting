@@ -35,6 +35,7 @@ def mock_engine():
 @pytest.fixture
 def client():
     from fastapi.testclient import TestClient
+
     return TestClient(app_module.app)
 
 

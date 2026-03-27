@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 # Metrics
 # ---------------------------------------------------------------------------
 
+
 def compute_sad(pred: torch.Tensor, gt: torch.Tensor) -> float:
     """Sum of Absolute Differences.
 
@@ -45,15 +46,17 @@ def _sobel_gradient(alpha: torch.Tensor) -> torch.Tensor:
     """Compute Sobel gradient magnitude. Input: (N, 1, H, W)."""
     sobel_x = torch.tensor(
         [[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]],
-        dtype=alpha.dtype, device=alpha.device,
+        dtype=alpha.dtype,
+        device=alpha.device,
     ).reshape(1, 1, 3, 3)
     sobel_y = torch.tensor(
         [[-1, -2, -1], [0, 0, 0], [1, 2, 1]],
-        dtype=alpha.dtype, device=alpha.device,
+        dtype=alpha.dtype,
+        device=alpha.device,
     ).reshape(1, 1, 3, 3)
     gx = F.conv2d(alpha, sobel_x, padding=1)
     gy = F.conv2d(alpha, sobel_y, padding=1)
-    return torch.sqrt(gx ** 2 + gy ** 2 + 1e-6)
+    return torch.sqrt(gx**2 + gy**2 + 1e-6)
 
 
 def compute_gradient_error(pred: torch.Tensor, gt: torch.Tensor) -> float:
@@ -76,7 +79,10 @@ def compute_gradient_error(pred: torch.Tensor, gt: torch.Tensor) -> float:
 
 
 def compute_connectivity(
-    pred: torch.Tensor, gt: torch.Tensor, threshold: float = 0.5, step: float = 0.1,
+    pred: torch.Tensor,
+    gt: torch.Tensor,
+    threshold: float = 0.5,
+    step: float = 0.1,
 ) -> float:
     """Connectivity error metric.
 
@@ -130,6 +136,7 @@ def evaluate_all(pred: torch.Tensor, gt: torch.Tensor) -> Dict[str, float]:
 # ---------------------------------------------------------------------------
 # Visualization
 # ---------------------------------------------------------------------------
+
 
 def save_side_by_side(
     original: torch.Tensor,

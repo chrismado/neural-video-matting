@@ -55,4 +55,5 @@ def test_convgru_gradient_flow():
 
 if __name__ == "__main__":
     import pytest
+
     pytest.main([__file__, "-v"])

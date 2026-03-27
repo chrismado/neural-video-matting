@@ -41,9 +41,7 @@ def _build_laplacian_pyramid(img: torch.Tensor, levels: int = 4):
     return pyramid
 
 
-def laplacian_loss(
-    pred: torch.Tensor, gt: torch.Tensor, levels: int = 4
-) -> torch.Tensor:
+def laplacian_loss(pred: torch.Tensor, gt: torch.Tensor, levels: int = 4) -> torch.Tensor:
     """Multi-level Laplacian pyramid L1 loss.
 
     Args:
@@ -87,7 +85,7 @@ def _sobel_filter(img: torch.Tensor) -> torch.Tensor:
 
     gx = F.conv2d(img, sobel_x, padding=1)
     gy = F.conv2d(img, sobel_y, padding=1)
-    return torch.sqrt(gx ** 2 + gy ** 2 + 1e-6)
+    return torch.sqrt(gx**2 + gy**2 + 1e-6)
 
 
 def gradient_loss(pred: torch.Tensor, gt: torch.Tensor) -> torch.Tensor:
@@ -111,9 +109,7 @@ def gradient_loss(pred: torch.Tensor, gt: torch.Tensor) -> torch.Tensor:
     return F.l1_loss(pred_grad, gt_grad)
 
 
-def temporal_consistency_loss(
-    pred_alpha: torch.Tensor, frames: torch.Tensor
-) -> torch.Tensor:
+def temporal_consistency_loss(pred_alpha: torch.Tensor, frames: torch.Tensor) -> torch.Tensor:
     """Temporal consistency loss using simple frame-difference based warping.
 
     Warps previous frame's alpha prediction to current frame using the

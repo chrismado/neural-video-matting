@@ -91,10 +91,13 @@ class MattingNetwork(nn.Module):
                 x = torch.cat([frame, masks[:, t]], dim=1)  # (B, 4, H, W)
             else:
                 # No guidance — pad with zeros (for testing)
-                x = torch.cat([
-                    frame,
-                    torch.zeros(B, 1, *frame.shape[2:], device=frame.device),
-                ], dim=1)
+                x = torch.cat(
+                    [
+                        frame,
+                        torch.zeros(B, 1, *frame.shape[2:], device=frame.device),
+                    ],
+                    dim=1,
+                )
 
             # Encode
             features = self.encoder(x)  # [f1 (H/4), f2 (H/8), f3 (H/16), f4 (H/32)]
@@ -136,10 +139,13 @@ class MattingNetwork(nn.Module):
         if guidance is not None:
             x = torch.cat([frame, guidance], dim=1)
         else:
-            x = torch.cat([
-                frame,
-                torch.zeros(frame.shape[0], 1, *frame.shape[2:], device=frame.device),
-            ], dim=1)
+            x = torch.cat(
+                [
+                    frame,
+                    torch.zeros(frame.shape[0], 1, *frame.shape[2:], device=frame.device),
+                ],
+                dim=1,
+            )
 
         features = self.encoder(x)
         h = self.recurrent(features[0], h_prev)
