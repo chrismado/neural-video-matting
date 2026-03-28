@@ -43,7 +43,7 @@ def test_trimap_value_range():
     alpha = np.random.rand(64, 64).astype(np.float32)
     trimap = generate_trimap(alpha)
     assert trimap.min() >= 0
-    assert trimap.max() <= 255
+    assert trimap.max() <= 1.0
 
 
 def test_rough_mask():

@@ -119,6 +119,29 @@ def _validate_video_upload(upload: UploadFile) -> None:
             )
 
 
+async def _validate_upload_size(upload: UploadFile) -> bytes:
+    """Read upload content and validate it does not exceed MAX_UPLOAD_SIZE.
+
+    Args:
+        upload: The uploaded file to validate.
+
+    Returns:
+        The raw bytes of the uploaded file.
+
+    Raises:
+        HTTPException: If the file exceeds MAX_UPLOAD_SIZE.
+    """
+    data = await upload.read()
+    if len(data) > MAX_UPLOAD_SIZE:
+        raise HTTPException(
+            status_code=413,
+            detail=(
+                f"Upload exceeds maximum size of {MAX_UPLOAD_SIZE // (1024 * 1024)} MB."
+            ),
+        )
+    return data
+
+
 @app.post("/matte_video")
 async def matte_video(
     video: UploadFile = File(...),
@@ -139,8 +162,10 @@ async def matte_video(
     if _engine is None:
         raise HTTPException(status_code=503, detail="Model not loaded.")
 
-    # Validate video format before processing
+    # Validate video format and size before processing
     _validate_video_upload(video)
+    video_data = await _validate_upload_size(video)
+    mask_data = await _validate_upload_size(mask)
 
     with tempfile.TemporaryDirectory() as tmpdir:
         # Save uploaded files
@@ -148,9 +173,9 @@ async def matte_video(
         mask_path = os.path.join(tmpdir, "input_mask" + Path(mask.filename).suffix)
 
         with open(video_path, "wb") as f:
-            f.write(await video.read())
+            f.write(video_data)
         with open(mask_path, "wb") as f:
-            f.write(await mask.read())
+            f.write(mask_data)
 
         # Load frames (with format validation disabled since we already saved to disk)
         try:
@@ -218,8 +243,11 @@ async def matte_frame(
     if _engine is None:
         raise HTTPException(status_code=503, detail="Model not loaded.")
 
+    # Validate upload sizes
+    img_bytes = await _validate_upload_size(image)
+    mask_bytes = await _validate_upload_size(mask)
+
     # Read image
-    img_bytes = await image.read()
     img_arr = np.frombuffer(img_bytes, np.uint8)
     img = cv2.imdecode(img_arr, cv2.IMREAD_COLOR)
     if img is None:
@@ -227,7 +255,6 @@ async def matte_frame(
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
     # Read mask
-    mask_bytes = await mask.read()
     mask_arr = np.frombuffer(mask_bytes, np.uint8)
     mask_img = cv2.imdecode(mask_arr, cv2.IMREAD_GRAYSCALE)
     if mask_img is None:
@@ -265,16 +292,21 @@ async def composite_endpoint(
 
     with tempfile.TemporaryDirectory() as tmpdir:
         # Save uploads
+        # Validate upload sizes
+        fg_data = await _validate_upload_size(fg_video)
+        alpha_data = await _validate_upload_size(alpha_zip)
+        bg_data = await _validate_upload_size(bg_video)
+
         fg_path = os.path.join(tmpdir, "fg" + Path(fg_video.filename).suffix)
         alpha_zip_path = os.path.join(tmpdir, "alphas.zip")
         bg_path = os.path.join(tmpdir, "bg" + Path(bg_video.filename).suffix)
 
         with open(fg_path, "wb") as f:
-            f.write(await fg_video.read())
+            f.write(fg_data)
         with open(alpha_zip_path, "wb") as f:
-            f.write(await alpha_zip.read())
+            f.write(alpha_data)
         with open(bg_path, "wb") as f:
-            f.write(await bg_video.read())
+            f.write(bg_data)
 
         # Load foreground frames
         fg_frames_bgr = load_video_frames(fg_path)

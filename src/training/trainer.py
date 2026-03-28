@@ -6,7 +6,7 @@ from typing import Any, Dict, Optional
 
 import torch
 import torch.nn as nn
-from torch.cuda.amp import GradScaler, autocast
+from torch.amp import GradScaler, autocast
 from torch.optim import AdamW
 from torch.optim.lr_scheduler import CosineAnnealingLR, LinearLR, SequentialLR
 from torch.utils.data import DataLoader
@@ -72,7 +72,7 @@ class Trainer:
 
         # Mixed precision
         self.use_amp = config.get("mixed_precision", True)
-        self.scaler = GradScaler(enabled=self.use_amp)
+        self.scaler = GradScaler("cuda", enabled=self.use_amp)
 
         # Loss weights
         self.loss_weights = config.get(
@@ -177,7 +177,7 @@ class Trainer:
                 guidance_masks = generate_rough_mask_batch(alpha_gt)  # (B, T, 1, H, W)
 
             # Forward pass: full clip through model
-            with autocast(enabled=self.use_amp):
+            with autocast("cuda", enabled=self.use_amp):
                 outputs = self.model(composite, guidance_masks)
                 pred_alpha = outputs["alphas"]  # (B, T, 1, H, W)
 
@@ -260,7 +260,7 @@ class Trainer:
 
     def load_checkpoint(self, path: str):
         """Load model and training state from a checkpoint file."""
-        ckpt = torch.load(path, map_location=self.device)
+        ckpt = torch.load(path, map_location=self.device, weights_only=True)
         self.model.load_state_dict(ckpt["model_state_dict"])
         self.optimizer.load_state_dict(ckpt["optimizer_state_dict"])
         self.scheduler.load_state_dict(ckpt["scheduler_state_dict"])

@@ -119,6 +119,7 @@ class VideoMatteDataset(Dataset):
         pha_clip_dir = self.pha_dir / clip_name
 
         fgr_frame_files = sorted(fgr_clip_dir.iterdir())
+        pha_frame_files = sorted(pha_clip_dir.iterdir())
         total_frames = len(fgr_frame_files)
 
         start = random.randint(0, max(0, total_frames - self.clip_length))
@@ -130,15 +131,13 @@ class VideoMatteDataset(Dataset):
             frame_idx = (start + i) % total_frames
 
             # Foreground RGB
-            fgr_files = sorted(fgr_clip_dir.iterdir())
-            fgr_img = cv2.imread(str(fgr_files[frame_idx]))
+            fgr_img = cv2.imread(str(fgr_frame_files[frame_idx]))
             fgr_img = cv2.cvtColor(fgr_img, cv2.COLOR_BGR2RGB)
             fgr_img = cv2.resize(fgr_img, (self.output_size[1], self.output_size[0]))
             fg_frames.append(fgr_img.astype(np.float32) / 255.0)
 
             # Alpha matte
-            pha_files = sorted(pha_clip_dir.iterdir())
-            pha_img = cv2.imread(str(pha_files[frame_idx]), cv2.IMREAD_GRAYSCALE)
+            pha_img = cv2.imread(str(pha_frame_files[frame_idx]), cv2.IMREAD_GRAYSCALE)
             pha_img = cv2.resize(pha_img, (self.output_size[1], self.output_size[0]))
             alpha_frames.append(pha_img.astype(np.float32) / 255.0)
 

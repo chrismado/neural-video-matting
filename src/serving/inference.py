@@ -98,7 +98,7 @@ class MattingInference:
         self.output_size = output_size
 
         self.model = MattingNetwork()
-        ckpt = torch.load(checkpoint_path, map_location=self.device)
+        ckpt = torch.load(checkpoint_path, map_location=self.device, weights_only=True)
         state_dict = ckpt.get("model_state_dict", ckpt)
         self.model.load_state_dict(state_dict)
         self.model.to(self.device)
